@@ -1,7 +1,7 @@
-                                                                            Datacom_FinalProject
+Datacom_FinalProject
                                                                             
-                                                      การเชื่อมต่อระบบสื่อสาร และเขียนโปรแกรม เพื่อทำให้สามารถควบคุมการทำงานของอุปกรณ์
-                       ![Screenshot 2020-11-10 111931](https://user-images.githubusercontent.com/54527556/98627541-0cd70380-2347-11eb-85cb-805ed774b74c.png)
+การเชื่อมต่อระบบสื่อสาร และเขียนโปรแกรม เพื่อทำให้สามารถควบคุมการทำงานของอุปกรณ์
+![Screenshot 2020-11-10 111931](https://user-images.githubusercontent.com/54527556/98627541-0cd70380-2347-11eb-85cb-805ed774b74c.png)
                        
                        
                        ข้อกำหนดการทำงานเบื้องต้น

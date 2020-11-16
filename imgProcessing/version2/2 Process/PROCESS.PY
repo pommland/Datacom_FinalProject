@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 def process(img):
-    filename = 'l.bmp'
+    filename = img
     img = cv2.imread(filename)
     img = cv2.rotate(img, cv2.cv2.ROTATE_90_CLOCKWISE) 
     img = img[40:140,20:100]

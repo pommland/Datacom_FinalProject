@@ -1,14 +1,15 @@
 import cv2
-
+import numpy as np 
 
 def cropPic(path_IN,path_OUT):        # function ครอปตรงกลางรูป เริ่มที่ ตำแหน่ง x= 60 y=80 ขนาด 160*160 พิกเซล
-    x=20
-    y=20
-    h=120
-    w=120
+    x=40
+    y=80
+    h=160
+    w=160
     img = cv2.imread(path_IN, 0)   # read path รูปที่จะครอป 
     crop = img[y:y+h, x:x+w]    # ทำการ ครอป
     cv2.imwrite(path_OUT, crop) # save path ไปที่ ตำแหน่งที่ต้องการ save
+
 
 def setShade(path_IN,path_OUT): #แก้เฉดสีให้เป็นขาว-ดำสุดไปเลย
     img = cv2.imread(path_IN,cv2.IMREAD_GRAYSCALE)
@@ -53,7 +54,11 @@ def getValue(pathSetShade):
     Q1P4 = int(img[Q1_YP3P4][Q1_XP1P4])
     avrQ1 = (Q1P1+Q1P2+Q1P3+Q1P4)//4
     print('--------------',avrQ1)
-
+    image2 = cv2.rectangle(img,(Q1_YP1P2,Q1_XP2P3), (Q1_YP3P4,Q1_XP1P4),(255,40,40), 1) 
+    cv2.imshow('Contours', image2) 
+    cv2.waitKey(0) 
+    cv2.destroyAllWindows() 
+        
 
     Q2_YP1P2 = centerQ2[0]-5
     Q2_XP2P3 = centerQ2[1]-5
@@ -145,65 +150,53 @@ def getValue(pathSetShade):
     print(avrQ4)
 
 
-rePicture("1.original_pic/original.png","2.crop_pic/crop.png","3.setShade_pic/setShade.png","4.resize_pic/resize.png")
+# rePicture("1.original_pic/original.png","2.crop_pic/crop.png","3.setShade_pic/setShade.png","4.resize_pic/resize.png")
+# rePicture("1.original_pic/g1.bmp","2.crop_pic/g2.bmp","3.setShade_pic/g3.bmp","4.resize_pic/g4.bmp")
 
+# img = cv2.imread()
 
-# img = cv2.imread("3.setShade_pic/setShade.png",0)
-# height,width = img.shape
+# cropPic("1.original_pic/g1.bmp","1.original_pic/g2.bmp")   # function ครอปตรงกลางรูป 
+    # setShade(pathCrop,pathSetShade)    # Function ทำให้รูปสีเข้มขึ้น
+    # resizePic(pathSetShade,pathResize)       # Function ลดขนาดรูป
+    # getValue(pathSetShade)
 
-# img_Q = []
-# img_Q1 =img[0:int(height/2), int(width/2):width]
-# img_Q2 =img[0:int(height/2), 0:int(width/2)]
-# img_Q3 =img[int(height/2):height, 0:int(width/2)]
-# img_Q4 =img[int(height/2):height, int(width/2):width]
-
-# img_Q.append(img_Q1)
-# img_Q.append(img_Q2)
-# img_Q.append(img_Q3)
-# img_Q.append(img_Q4)
-# binary_code = ""
-
-
-
-# for i in range(0 , len(img_Q) ):
-#     if img_Q[i][30][30] == 255 :
-#         binary_code += "1"
-#     else :
-#         binary_code += "0"
-# print(binary_code)
+x=20
+y=20
+h=120
+w=120
+img = cv2.imread("1.original_pic/g1.bmp", 0)   # read path รูปที่จะครอป 
+crop = img[80:240, 40:200]    # ทำการ ครอป
+cv2.imwrite("2.crop_pic/g2.bmp", crop) # save path ไปที่ ตำแหน่งที่ต้องการ save
+getValue("2.crop_pic/g2.bmp")
 
 
 
-# print(img_Q1[30][30],img_Q2[30][30],img_Q3[30][30],img_Q4[30][30])
-# centerQ = int(img_Q1.shape[0]/2),int(img_Q1.shape[1]/2)
-
-
-# p1 = img_Q1[centerQ[0]-5][centerQ[1]+5]
-# p2 = img_Q1[centerQ[0]-5][centerQ[1]-5]
-# p3 = img_Q1[centerQ[0]+5][centerQ[1]-5]
-# p4 = img_Q1[centerQ[0]+5][centerQ[1]+5]
-
-# print(img_Q2[centerQ[0]-5][centerQ[1]+5])
-# print(img_Q2[centerQ[0]-5][centerQ[1]-5])
-# print(img_Q2[centerQ[0]+5][centerQ[1]-5])
-# print(img_Q2[centerQ[0]+5][centerQ[1]+5])
-
-# print(img_Q3[centerQ[0]-5][centerQ[1]+5])
-# print(img_Q3[centerQ[0]-5][centerQ[1]-5])
-# print(img_Q3[centerQ[0]+5][centerQ[1]-5])
-# print(img_Q3[centerQ[0]+5][centerQ[1]+5])
-
-# print(img_Q4[centerQ[0]-5][centerQ[1]+5])
-# print(img_Q4[centerQ[0]-5][centerQ[1]-5])
-# print(img_Q4[centerQ[0]+5][centerQ[1]-5])
-# print(img_Q4[centerQ[0]+5][centerQ[1]+5])
-
-
-
-# #  x=20
-# #     y=20
-# #     h=120
-# #     w=120
-# #     img = cv2.imread(path_IN, 0)   # read path รูปที่จะครอป 
-# #     crop = img[y:y+h, x:x+w]    # ทำการ ครอป
-# #     cv2.imwrite(path_OUT, crop) # save path ไปที่ ตำแหน่งที่ต้องการ save
+# # Let's load a simple image with 3 black squares 
+# image = cv2.imread("2.crop_pic/g2.bmp") 
+# cv2.waitKey(0) 
+  
+# # Grayscale 
+# gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+  
+# # Find Canny edges 
+# edged = cv2.Canny(gray, 30, 200) 
+# cv2.waitKey(0) 
+  
+# # Finding Contours 
+# # Use a copy of the image e.g. edged.copy() 
+# # since findContours alters the image 
+# contours, hierarchy = cv2.findContours(edged,  
+#     cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+  
+# cv2.imshow('Canny Edges After Contouring', edged) 
+# cv2.waitKey(0) 
+  
+# print("Number of Contours found = " + str(len(contours))) 
+  
+# # Draw all contours 
+# # -1 signifies drawing all contours 
+# cv2.drawContours(image, contours, -1, (0, 255, 0), 3) 
+  
+# cv2.imshow('Contours', image) 
+# cv2.waitKey(0) 
+# cv2.destroyAllWindows() 

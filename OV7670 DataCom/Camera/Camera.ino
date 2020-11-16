@@ -309,6 +309,21 @@ const struct regval_list qvga_ov7670[] PROGMEM = {
   { 0xff, 0xff }, /* END MARKER */
 };
 
+const struct regval_list qqvga_ov7670[] PROGMEM = {
+  // {REG_COM3, COM3_DCWEN}, // enable downsamp/crop/window
+
+  {REG_COM14, 0x1a},  // divide by 4
+  {0x72, 0x22},   // downsample by 4
+  {0x73, 0xf2},   // divide by 4
+  {REG_HSTART, 0x16},
+  {REG_HSTOP, 0x04},
+  {REG_HREF, 0xa4},
+  {REG_VSTART, 0x02},
+  {REG_VSTOP, 0x7a},
+  {REG_VREF, 0x0a},
+  {0xff, 0xff}, /* END MARKER */
+};
+
 const struct regval_list yuv422_ov7670[] PROGMEM = {
   { REG_COM7, 0x0 },  /* Selects YUV mode */
   { REG_RGB444, 0 },  /* No RGB444 please */
@@ -524,7 +539,7 @@ void setColor(void) {
 
 void setRes(void) {
   wrReg(REG_COM3, 4); // REG_COM3 enable scaling
-  wrSensorRegs8_8(qvga_ov7670);
+  wrSensorRegs8_8(qqvga_ov7670);
 }
 
 void camInit(void) {
@@ -546,7 +561,7 @@ void arduinoUnoInut(void) {
   OCR2A = 0;//(F_CPU)/(2*(X+1))
   DDRC &= ~15;//low d0-d3 camera
   DDRD &= ~252;//d7-d4 and interrupt pins
-  _delay_ms(3000);
+  _delay_ms(1000);
 
   //set up twi for 100khz
   TWSR &= ~3;//disable prescaler for TWI
@@ -571,27 +586,51 @@ void StringPgm(const char * str) {
 
 static void captureImg(uint16_t wg, uint16_t hg) {
   uint16_t y, x;
+  uint8_t buf[320];
 
+  while (!(PIND & 8)); //wait for high  -> vsync
   StringPgm(PSTR("*RDY*"));
+  while ((PIND & 8)); //wait for low  -> vsync
 
-  while (!(PIND & 8));//wait for high
-  while ((PIND & 8));//wait for low
 
   y = hg;
   while (y--) {
     x = wg;
-    //while (!(PIND & 256));//wait for high
+    uint8_t*b = buf, *b2 = buf;
+
+    while (!(PINB & 1)); //wait for high  -> href
+
     while (x--) {
-      while ((PIND & 4));//wait for low
-      UDR0 = (PINC & 15) | (PIND & 240);
-      while (!(UCSR0A & (1 << UDRE0)));//wait for byte to transmit
-      while (!(PIND & 4));//wait for high
-      while ((PIND & 4));//wait for low
-      while (!(PIND & 4));//wait for high
+      while ((PIND & 4)) { //wait for low  -> pclk
+        if (!(UCSR0A & (1 << UDRE0)) && b2 < b) {
+          UDR0 = *b2++;
+        }
+      }
+      *b++ = (PINC & 15) | (PIND & 240); // get only first byte
+      while (!(PIND & 4)) { //wait for high  -> pclk
+        if (!(UCSR0A & (1 << UDRE0)) && b2 < b) {
+          UDR0 = *b2++;
+        }
+      }
+      while ((PIND & 4)) { //wait for low  -> pclk
+        if (!(UCSR0A & (1 << UDRE0)) && b2 < b) {
+          UDR0 = *b2++;
+        }
+      }
+      while (!(PIND & 4)) { //wait for high  -> pclk
+        if (!(UCSR0A & (1 << UDRE0)) && b2 < b) {
+          UDR0 = *b2++;
+        }
+      }
     }
-    //  while ((PIND & 256));//wait for low
+
+    while ((PINB & 1)); //wait for low  -> href
+
+    while (b2 < b) {
+      UDR0 = *b2++;
+      while (!( UCSR0A & (1 << UDRE0))); //wait for byte to transmit
+    }
   }
-  _delay_ms(100);
 }
 
 void setup() {
@@ -599,10 +638,12 @@ void setup() {
   camInit();
   setRes();
   setColor();
-  wrReg(0x11, 11); //Earlier it had the value: wrReg(0x11, 12); New version works better for me :) !!!!
+  wrReg(0x11, 0x80 | 3); //Earlier it had the value: wrReg(0x11, 12); New version works better for me :) !!!!
 }
 
 
 void loop() {
-  captureImg(320, 240);
+  char a = UDR0;
+  a++;
+  captureImg(160, 120);
 }

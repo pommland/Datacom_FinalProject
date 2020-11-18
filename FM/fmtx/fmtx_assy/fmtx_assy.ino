@@ -63,10 +63,9 @@ void Send_FM_Data(String value) {
           d = delay3;
         }
         Serial.println(input[k]);
-        for (int r = 0 ; r  < 5 ; ++r)
-          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {
-            auto start = millis();
-            for (int s = 0 ; s < size ; ++s) {
+        for (int r = 0 ; r  < 5 ; ++r) // send with fixed baudrate
+          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
+            for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
               dac.setVoltage(S_DAC[s], false);
               delayMicroseconds(d);
             }
@@ -77,12 +76,11 @@ void Send_FM_Data(String value) {
 
 }
 
-String getSerial() {
+String getSerial() { // get Data methods
   String res = "";
   if (Serial.available() > 0) {
-    while (1) {
+    while (1) { // read untill '~'  example to enter at the terminal   "xxx~"
       char c = Serial.read();
-      //      if (c == '~') break;
       if (c != 0xFFFFFFFF) {
         res += c;
       }
@@ -95,11 +93,11 @@ String getSerial() {
 void loop() {
   String s  = getSerial();
   if (s != "") {
-    s = "~" + s;
+    s = "~" + s;  // data will be send  example  enter "xxx~" data will be "~xxx~"
     Serial.println(s);
     Send_FM_Data(s);
     Serial.flush();
   } else {
-    dac.setVoltage(0, false); //
+    dac.setVoltage(0, false); // default
   }
 }

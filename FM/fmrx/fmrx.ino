@@ -39,16 +39,16 @@ int max = 0;
 auto lastCount = millis();
 int jitter = 0;
 
-void checkBit() {
+void checkBit() { // Check 8 bits
   if (check) {
     lastCount = millis();
-    if (count >= 30) {
+    if (count >= 30) { // if count is more than 30 cycles 
       res += "11";
     }
-    else if (count >= 22) {
+    else if (count >= 22) { // if count is more than 22 cycles 
       res += "10";
     }
-    else if (count >= 10) {
+    else if (count >= 10) { // if count is more than 10 cycles 
       res += "01" ;
     }
     else {
@@ -65,11 +65,12 @@ void checkBit() {
         Serial.println("------------------------\nResult =");
         int sum = 0;
         int t = 1;
-        for (int i = 7 ; i >= 0 ; --i) {
+        
+        for (int i = 7 ; i >= 0 ; --i) {  // Binary to Decimal , index 7 is LSB  index 0 is MSB  so we recevied MSB first
           sum +=  (res[i] == '1' ? 1 : 0) * t;
           t <<= 1;
         }
-        Serial.println((char)sum);
+        Serial.println((char)sum);     
         Serial.println("------------------------");
         res = "";
       }
@@ -87,7 +88,7 @@ void calibrate() {
   Serial.println("Done.");
 }
 
-void drop(int milli) {
+void drop(int milli) { // if no data send for n millisec reset data
   if (countBit != 0 && millis() - lastCount >= milli) {
     count = 0;
     max   = 0;
@@ -102,26 +103,25 @@ void drop(int milli) {
 void loop() {
 
   int tmp = analogRead(A0) - jitter;
-  //  Serial.println(tmp);
 
-  drop(100);
+  drop(100); // drops in 100ms
 
-  if (check == false && tmp >= 25) {
+  if (check == false && tmp >= 25) { // signal at 25 
     timer = micros();
     count = 0;
     prev  = 0;
     max   = 0;
     check = true;
   }
-  while (check && (micros() - timer) <=  elapse_time ) {
+  while (check && (micros() - timer) <=  elapse_time ) { // if signal receive begin loop for counting data
     tmp = analogRead(A0) - jitter;
     if (max < tmp) max = tmp;
-    if (tmp < 3 && max - tmp > r_slope) {
+    if (tmp < 3 && max - tmp > r_slope) {  // if peak down to base  it is 1 cycles
       //      Serial.println(String(max) + ":" + String(tmp));
       count ++;
       max = 0;
     }
   }
-  checkBit();
+  checkBit();  // count done check bits
 
 }

@@ -1,0 +1,105 @@
+#include <Wire.h>
+#include <Adafruit_MCP4725.h>
+#include <Adafruit_ADS1015.h>
+Adafruit_MCP4725 dac;
+#define defaultFreq 1700 // dac speed (Hz)
+#define f0 500 // FSK f0
+#define f1 750 // FSK f1
+#define f2 1050 // FSK f2
+#define f3 1500 // ASK f3
+float delay0, delay1, delay2, delay3;
+int   Cycles[4] = { 1 , 3 , 5 , 7};
+
+const int size = 4 ;
+
+uint16_t S_DAC[size];
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  dac.begin(0x62);
+  //  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
+  delay0 = 2300;
+  delay1 = 667;
+  delay2 = 337;
+  delay3 = 196 ;
+
+  Serial.println( String(delay0) + " " + String(delay1) + " " + String(delay2) + " " + String(delay3));
+  getS_DAC();
+  Serial.flush();
+}
+
+void getS_DAC() {
+  int div = 360 / size;
+  for ( int i = 0 ; i < size ; i++) {
+    S_DAC[i] = map( sin(i * div * 3.1415926 / 180) * 100 , -100, 100 , 0 , 1023);
+  }
+}
+
+void Send_FM_Data(String value) {
+  for (int valueIndex = 0 ; valueIndex < value.length() ; ++valueIndex) {
+    if (value[valueIndex] != '\n' || value[valueIndex] != '~') {
+      char in  = value[valueIndex];
+      int input[4] = { 0, 0, 0, 0 };
+      int i = 0;
+      while (in > 0) {   //  แปลงเป็น 2 บิต
+        input[i] = in & 3 ;
+        in >>= 2;
+        i++;
+      }
+
+      for (int k = 3 ; k >= 0 ; k--) {
+        float d;
+        if (input[k] == 0) {      // ‘00’
+          d = delay0;
+        }
+        else if (input[k] == 1) { // ‘01’
+          d = delay1;
+        }
+        else if (input[k] == 2) { // ‘10’
+          d = delay2;
+        }
+        else if (input[k] == 3) { // ‘11’
+          d = delay3;
+        }
+        Serial.println(input[k]);
+        for (int r = 0 ; r  < 5 ; ++r)
+          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {
+            auto start = millis();
+            for (int s = 0 ; s < size ; ++s) {
+              dac.setVoltage(S_DAC[s], false);
+              delayMicroseconds(d);
+            }
+          }
+      }
+    }
+  }
+
+}
+
+String getSerial() {
+  String res = "";
+  if (Serial.available() > 0) {
+    while (1) {
+      char c = Serial.read();
+      //      if (c == '~') break;
+      if (c != 0xFFFFFFFF) {
+        res += c;
+      }
+      if (c == '~') break;
+    }
+  }
+  return res;
+}
+
+void loop() {
+  String s  = getSerial();
+  if (s != "") {
+    s = "~" + s;
+    Serial.println(s);
+    Send_FM_Data(s);
+    Serial.flush();
+  } else {
+    dac.setVoltage(0, false); //
+  }
+}

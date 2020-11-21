@@ -63,7 +63,7 @@ void Send_FM_Data(String value) {
           d = delay3;
         }
         Serial.println(input[k]);
-        for (int r = 0 ; r  < 5 ; ++r) // send with fixed baudrate
+        for (int r = 0 ; r  <  5   ; ++r) // send with fixed baudrate
           for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
             for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
               dac.setVoltage(S_DAC[s], false);

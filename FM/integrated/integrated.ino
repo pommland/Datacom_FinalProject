@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_MCP4725.h>
 #include <Adafruit_ADS1015.h>
+#define radio_freq 90
 Adafruit_MCP4725 dac;
 float delay0, delay1, delay2, delay3;
 int   Cycles[4] = { 1 , 3 , 5 , 7};
@@ -167,7 +168,7 @@ void initRx() {
   cbi(ADCSRA, ADPS1) ;
   cbi(ADCSRA, ADPS0) ;
   Radio.init();
-  Radio.set_frequency(87);
+  Radio.set_frequency(radio_freq);
   pinMode(A1, INPUT);
   delay(500);
 }
@@ -280,7 +281,6 @@ void receiveData() {
     int tmp = analogRead(A1)  ;
     if (max < tmp) max = tmp;
     if (tmp < 20 && max - tmp >  r_slope) {  // if peak down to base  it is 1 cycles
-      //      Serial.println(String(max) + ":" + String(tmp));
       count ++;
       max = 0;
     }

@@ -68,7 +68,7 @@ void split(String s[], int num, char value[], char sep[] = " " ) {
 
 void handleSerial() {
   if (Serial.available() > 0) {
-    String res = Serial.readStringUntil('~');
+    String res = Serial.readStringUntil('~'); // inpuit format  "Command data1 data2 endtag  ex. Send 1234 ~ 
 
     // String to char[]
     char s[res.length()];
@@ -77,8 +77,8 @@ void handleSerial() {
     }
 
     // split
-    String inp[3];
-    split(inp, 3, s);
+    String inp[4];
+    split(inp, 4, s);
 
     if (inp[0] == "Send") {
       // Send data

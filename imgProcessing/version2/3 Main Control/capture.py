@@ -32,7 +32,7 @@ def capture(COM_PORT, name):
   else:
     print('Serial already open')
 
-  for i in range(3):
+  for i in range(5):
     print("Waiting for RDY from Arduino...")
     ser.read_until('*RDY*'.encode())
     read_image(ser, name)

@@ -144,6 +144,15 @@ void receiveframe() {
       clk = 0 ;
       //// get ACK*
       //// ACK Receive
+      //      double ackTimeOut = millis();
+      //      boolean getAck = false;
+      //      while(!getAck){
+      //        if(millis() - ackTimeOut >= 3000){
+      //          //temp = package;
+      //          timeOut = true;
+      //          getAck = true;
+      //          break;
+      //        }
       ackreceive = frameNo.toInt();
       Serial.println("[Receive ACK]");
       Serial.println("Header : " + type);
@@ -155,6 +164,11 @@ void receiveframe() {
       clkAck = 0;
       Serial.println("****************************************************");
 
+      //      failed = true;
+      //      getAck = true;
+      //      timeOut = false;
+      //      delay(1500);
+      //        }
     }
 
     else if (type == "~" && frameNo == "~") {
@@ -207,8 +221,25 @@ void sendframe () {
     //    Serial.println("temp : " + String(temp));
 
     //// Send Frame
+    //// timeOut
+    //        if(timeOut){
+    //          for(int i=0;i<tempPackage.length();i++){
+    //          mySerial.write(tempPackage[i]);
+    //          }
+    //        Serial.println("TimeOut Resend!!!");
+    //        }
+    //
+    //        //// ส่ง Failed ต้องส่ง Frame เก่า
+    //        else if(failed){
+    //          for(int i=0;i<tempPackage.length();i++){
+    //          mySerial.write(tempPackage[i]);
+    //          }
+    //        Serial.println("Send Failed Resend!!!");
+    //        Serial.println("Send Frame : " + String(frameCount-1));
+    //        }
 
     //// Not timeOut
+    //        else{
     package = "I;" + String(frameCount) + ";" + data;
     tempPackage = package;
 
@@ -234,6 +265,7 @@ void sendframe () {
     clk = millis();
     timerstart = true ;
     break;
+    //      }
   }
 }
 void ENTERword () {
@@ -247,6 +279,73 @@ void ENTERword () {
         i  = 0 ;
       }
     }
+  }
+}
+
+/****************************************************************************** C R C **************************************************************************************************/
+
+void CRC() //เอา Data มาต่อ CRC
+{
+  if (outFrame != 0)
+  {
+    unsigned long canXOR = 0x8000000;//ตั้งใหญ่ๆไว้ก่อนเพื่อเอามาเช็คขนาดดาต้า
+    unsigned long remainder = outFrame << 5;//ตัวแปรใหม่ที่มาจากการเติม 0 หลัง outFrame 5 ตัว
+    unsigned long divisor = B110101;//กำหนด divisor
+    unsigned long tmp = canXOR & remainder;//ไว้ตรวจว่าจะเอา remainder ไป or ตรงไหนใน data(ต้อง XOR ตัวหน้าสุดก่อน)
+    while (tmp == 0)
+    {
+      canXOR >>= 1;//ปรับขนาดให้เท่ากับดาต้า
+      tmp = canXOR & remainder;
+    }
+    tmp = canXOR & divisor;//ไว้ตรวจว่าจะเริ่ม XOR ตำแหน่งไหน
+    while (tmp == 0)
+    {
+      divisor <<= 1;//ชิพไปเรื่อยๆจนกว่าจะถึงตำแหน่ง XOR แรก
+      tmp = canXOR & divisor;
+    }
+    while (divisor >= B110101)//ทำจนกว่า divisor จะน้อยกว่าค่าที่กำหนด
+    {
+      tmp = remainder & canXOR;//ดูว่าตำแหน่งนี้ XOR ได้หรือไม่(XOR ตำแหน่งที่เป็น 1xxxxx)
+      if (tmp > 0)remainder = remainder ^ divisor;//ทำการ XOR
+      divisor >>= 1;
+      canXOR >>= 1;
+    }
+    outFrame <<= 5;//เติม0 5ตัว
+    outFrame += remainder;//เปลี่ยน5บิตสุดท้ายเป็นremainder
+  }
+}
+
+/************************************************************************* c h e c k E r r o r ( ) *****************************************************************************************/
+
+boolean checkError(unsigned long data) //ใช้ CRC เช็ค Error
+{
+  if (data != 0)
+  {
+    unsigned long canXOR = 0x8000000;
+    unsigned long remainder = data;
+    unsigned long divisor = B110101;
+    unsigned long tmp = canXOR & remainder;
+    while (tmp == 0)
+    {
+      canXOR >>= 1;
+      tmp = canXOR & remainder;
+    }
+
+    tmp = canXOR & divisor;
+    while (tmp == 0)
+    {
+      divisor <<= 1;
+      tmp = canXOR & divisor;
+    }
+    while (divisor >= B110101)
+    {
+      tmp = remainder & canXOR;
+      if (tmp > 0)remainder = remainder ^ divisor;
+      divisor >>= 1;
+      canXOR >>= 1;
+    }
+    if (remainder == 0)return true;//ถ้าเศษเป็น0 return true
+    else return false;//ถ้าไม่ return false
   }
 }
 
@@ -281,11 +380,26 @@ void loop() {
   else if (millis() - clk < 2000) {
     timeout = false ;
   }
-  
+
+//  //// Ack Timeout
+//  if (millis() - clkAck > 2000 && ackStart) {
+//    Serial.println("Ack lost");
+//    ackTimeout = true;
+//  }
+//  else if (millis() - clkAck < 2000) {
+//    ackTimeout = false;
+//  }
+
+
   //// after send success
   if ((timeout || ackreceive != frameCount) && !firstsend) {
     resend() ;
   }
+//  else if (ackTimeout){
+//    Serial.println("need resend Ack");
+//    ackTimeout = false;
+////    resendAck();
+//  }
   else {
     sendframe();
     sendEnd();

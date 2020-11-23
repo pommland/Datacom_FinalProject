@@ -22,7 +22,7 @@ void setup() {
   Serial.begin(115200);
   Serial.flush();
   Radio.init();
-  Radio.set_frequency(87);
+  Radio.set_frequency(90);
   pinMode(A1, INPUT);
   delay(500);
 
@@ -163,6 +163,7 @@ void configs() {
 
 bool initial() {
   int tmp = analogRead(A1) ;
+  Serial.println(tmp);
   if (check == false && tmp >= initial_signal) { // signal at 25
     timer = micros();
     count = 0;
@@ -191,7 +192,7 @@ void FM() {
   if (initial()) {
     receiveData();
   }
-  checkBit();
+//  checkBit();
 }
 
 void loop() {

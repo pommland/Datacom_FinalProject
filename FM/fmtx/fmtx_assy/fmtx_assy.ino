@@ -3,12 +3,14 @@
 #include <Adafruit_ADS1015.h>
 Adafruit_MCP4725 dac;
 #define defaultFreq 1700 // dac speed (Hz)
-#define f0 500 // FSK f0
-#define f1 750 // FSK f1
-#define f2 1050 // FSK f2
-#define f3 1500 // ASK f3
+#define f0 500  // FSK f0
+#define f1 750  // FSK f1
+#define f2 1000 // FSK f2
+#define f3 1250 // FSK f3
 float delay0, delay1, delay2, delay3;
-int   Cycles[4] = { 1 , 3 , 5 , 7};
+//int   Cycles[4] = { 1 , 3 , 5 , 7};
+//int   Cycles[4] = { 2 , 3 , 4 , 5};
+int Cycles[2] = { 2, 5 };
 
 const int size = 4 ;
 
@@ -19,10 +21,14 @@ void setup() {
   Serial.begin(115200);
   dac.begin(0x62);
   //  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
-  delay0 = 2300;
-  delay1 = 667;
-  delay2 = 337;
-  delay3 = 196 ;
+  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
+  //  delay1 = (1000000 / f1 - 1000000 / defaultFreq) / size ;
+  //  delay2 = (1000000 / f2 - 1000000 / defaultFreq) / size ;
+  delay3 = (1000000 / f3 - 1000000 / defaultFreq) / size ;
+  //  delay0 = 2300;
+  //  delay1 = 667;
+  //  delay2 = 337;
+  //  delay3 = 196 ;
 
   Serial.println( String(delay0) + " " + String(delay1) + " " + String(delay2) + " " + String(delay3));
   getS_DAC();
@@ -40,30 +46,54 @@ void Send_FM_Data(String value) {
   for (int valueIndex = 0 ; valueIndex < value.length() ; ++valueIndex) {
     if (value[valueIndex] != '\n' || value[valueIndex] != '~') {
       char in  = value[valueIndex];
-      int input[4] = { 0, 0, 0, 0 };
+      int input[8] = { 0, 0, 0, 0 };
       int i = 0;
+      //      while (in > 0) {   //  แปลงเป็น 2 บิต
+      //        input[i] = in & 3 ;
+      //        in >>= 2;
+      //        i++;
+      //      }
+
       while (in > 0) {   //  แปลงเป็น 2 บิต
-        input[i] = in & 3 ;
-        in >>= 2;
+        input[i] = in & 1 ;
+        in >>= 1;
         i++;
       }
 
-      for (int k = 3 ; k >= 0 ; k--) {
+      //      for (int k = 3 ; k >= 0 ; k--) {
+      //        float d;
+      //        if (input[k] == 0) {      // ‘00’
+      //          d = delay0;
+      //        }
+      //        else if (input[k] == 1) { // ‘01’
+      //          d = delay1;
+      //        }
+      //        else if (input[k] == 2) { // ‘10’
+      //          d = delay2;
+      //        }
+      //        else if (input[k] == 3) { // ‘11’
+      //          d = delay3;
+      //        }
+      //        Serial.println(input[k]);
+      //        for (int r = 0 ; r  <  5 ; ++r) // send with fixed baudrate
+      //          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
+      //            for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
+      //              dac.setVoltage(S_DAC[s], false);
+      //              delayMicroseconds(d);
+      //            }
+      //          }
+      //      }
+
+      for (int k = 7 ; k >= 0 ; k--) {
         float d;
-        if (input[k] == 0) {      // ‘00’
+        if (input[k] == 0) {      // ‘0’
           d = delay0;
         }
-        else if (input[k] == 1) { // ‘01’
-          d = delay1;
-        }
-        else if (input[k] == 2) { // ‘10’
-          d = delay2;
-        }
-        else if (input[k] == 3) { // ‘11’
+        else if (input[k] == 1) { // ‘1’
           d = delay3;
         }
         Serial.println(input[k]);
-        for (int r = 0 ; r  <  5   ; ++r) // send with fixed baudrate
+//        for (int r = 0 ; r  <  5 ; ++r) // send with fixed baudrate
           for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
             for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
               dac.setVoltage(S_DAC[s], false);

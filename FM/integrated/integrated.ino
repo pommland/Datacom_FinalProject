@@ -3,6 +3,7 @@
 #include <Adafruit_MCP4725.h>
 #include <Adafruit_ADS1015.h>
 #define radio_freq 90
+#define dac_Address 0x62
 Adafruit_MCP4725 dac;
 float delay0, delay1, delay2, delay3;
 int   Cycles[4] = { 1 , 3 , 5 , 7};
@@ -12,7 +13,6 @@ uint16_t S_DAC[size];
 
 // RX Variables ///////////////////
 #include <TEA5767.h>
-#include <Wire.h>
 TEA5767 Radio;
 
 #ifndef cbi
@@ -22,9 +22,9 @@ TEA5767 Radio;
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 50;
-unsigned long  initial_signal = 25;
-unsigned long  elapse_time = 48000;
+unsigned long  r_slope = 40;
+unsigned long  initial_signal = 10;
+unsigned long  elapse_time = 21000;
 
 bool check = false;
 auto timer = millis();
@@ -50,7 +50,10 @@ void setup() {
 
 void loop() {
   handleSerial();
-  Rx();
+  String res = Rx();
+  if ( res != "") {
+    Serial.println("Data Received : " + res);
+  }
   dac.setVoltage(0, false); // default
 }
 
@@ -69,7 +72,7 @@ void split(String s[], int num, char value[], char sep[] = " " ) {
 
 void handleSerial() {
   if (Serial.available() > 0) {
-    String res = Serial.readStringUntil('~'); // inpuit format  "Command data1 data2 endtag  ex. Send 1234 ~ 
+    String res = Serial.readStringUntil('~'); // inpuit format  "Command data1 data2 endtag  ex. Send 1234 ~
 
     // String to char[]
     char s[res.length()];
@@ -105,7 +108,7 @@ void Tx(String s) {
 
 
 void initTx() {
-  dac.begin(0x62);
+  dac.begin(dac_Address); // 0x62 0x64
   delay0 = 2300;
   delay1 = 667;
   delay2 = 337;
@@ -148,13 +151,13 @@ void Send_FM_Data(String value) {
           d = delay3;
         }
         Serial.println(input[k]);
-        for (int r = 0 ; r  <  5   ; ++r) // send with fixed baudrate
-          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
-            for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
-              dac.setVoltage(S_DAC[s], false);
-              delayMicroseconds(d);
-            }
+
+        for (int cl = 0; cl < Cycles[input[k]] * 5; ++cl) {  // send with fixed cycles
+          for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
+            dac.setVoltage(S_DAC[s], false);
+            delayMicroseconds(d);
           }
+        }
       }
     }
   }
@@ -171,6 +174,7 @@ void initRx() {
   Radio.set_frequency(radio_freq);
   pinMode(A1, INPUT);
   delay(500);
+  Serial.println("Ready...");
 }
 
 void checkBit() { // Check 8 bits
@@ -192,8 +196,8 @@ void checkBit() { // Check 8 bits
     if (check) {
       countBit ++;
       check = false;
-      //      Serial.println(count);
-      //      Serial.println(res);
+      Serial.println(count);
+      Serial.println(res);
       if (countBit == 4) {
         countBit = 0;
         Serial.println("------------------------\nResult =");
@@ -216,8 +220,6 @@ void checkBit() { // Check 8 bits
 }
 
 
-
-
 void drop(int milli) { // if no data send for n millisec reset data
   if (countBit != 0 && millis() - lastCount >= milli) {
     count = 0;
@@ -232,8 +234,6 @@ void drop(int milli) { // if no data send for n millisec reset data
   }
 }
 
-
- 
 
 void Settings(String mode , String value ) {
 
@@ -265,8 +265,8 @@ void Settings(String mode , String value ) {
 
 
 bool initial() {
-  int tmp = analogRead(A1) ;
-  if (check == false && tmp >= initial_signal) { // signal at 25
+  int tmp =  analogRead(A1) ;
+  if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
     timer = micros();
     count = 0;
     prev  = 0;
@@ -287,10 +287,16 @@ void receiveData() {
   }
 }
 
-void Rx() {
+String Rx() {
   drop(100); // drops in 100ms
+//  Serial.println(analogRead(A1));
   if (initial()) {
     receiveData();
   }
   checkBit();
+  if (all[0] == "~" and all[ all.length() - 1 ] == "~") {
+    return all;
+  } else {
+    return "";
+  }
 }

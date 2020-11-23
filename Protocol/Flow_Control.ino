@@ -13,6 +13,8 @@ boolean firstsend = true ;
 boolean enterWord ;
 String tempPackage = "";
 unsigned long clk ;
+String codeWord;
+unsigned long int outFrame = 0;
 
 //// Variables for getACK
 boolean resending  = false;
@@ -114,6 +116,7 @@ void receiveframe() {
           Serial.print("Word : ");
           Serial.println(char(tempChar));
           Serial.println("Data : " + receiveData);
+          codeWord += char(tempChar);
 
           //// ACK Package
           cntack++;
@@ -144,15 +147,7 @@ void receiveframe() {
       clk = 0 ;
       //// get ACK*
       //// ACK Receive
-      //      double ackTimeOut = millis();
-      //      boolean getAck = false;
-      //      while(!getAck){
-      //        if(millis() - ackTimeOut >= 3000){
-      //          //temp = package;
-      //          timeOut = true;
-      //          getAck = true;
-      //          break;
-      //        }
+      
       ackreceive = frameNo.toInt();
       Serial.println("[Receive ACK]");
       Serial.println("Header : " + type);
@@ -173,6 +168,8 @@ void receiveframe() {
 
     else if (type == "~" && frameNo == "~") {
       Serial.println("Reset Ack");
+      Serial.println(String(codeWord));
+      codeWord = "";
       cntack = 0 ;
       frameNo = "0";
 
@@ -222,24 +219,8 @@ void sendframe () {
 
     //// Send Frame
     //// timeOut
-    //        if(timeOut){
-    //          for(int i=0;i<tempPackage.length();i++){
-    //          mySerial.write(tempPackage[i]);
-    //          }
-    //        Serial.println("TimeOut Resend!!!");
-    //        }
-    //
-    //        //// ส่ง Failed ต้องส่ง Frame เก่า
-    //        else if(failed){
-    //          for(int i=0;i<tempPackage.length();i++){
-    //          mySerial.write(tempPackage[i]);
-    //          }
-    //        Serial.println("Send Failed Resend!!!");
-    //        Serial.println("Send Frame : " + String(frameCount-1));
-    //        }
 
     //// Not timeOut
-    //        else{
     package = "I;" + String(frameCount) + ";" + data;
     tempPackage = package;
 
@@ -265,7 +246,6 @@ void sendframe () {
     clk = millis();
     timerstart = true ;
     break;
-    //      }
   }
 }
 void ENTERword () {
@@ -352,8 +332,8 @@ boolean checkError(unsigned long data) //ใช้ CRC เช็ค Error
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
-  mySerial.begin(57600);
+  Serial.begin(57600);
+  mySerial.begin(9600);
   Serial.flush();
   mySerial.flush();
 }
@@ -381,25 +361,10 @@ void loop() {
     timeout = false ;
   }
 
-//  //// Ack Timeout
-//  if (millis() - clkAck > 2000 && ackStart) {
-//    Serial.println("Ack lost");
-//    ackTimeout = true;
-//  }
-//  else if (millis() - clkAck < 2000) {
-//    ackTimeout = false;
-//  }
-
-
   //// after send success
   if ((timeout || ackreceive != frameCount) && !firstsend) {
     resend() ;
   }
-//  else if (ackTimeout){
-//    Serial.println("need resend Ack");
-//    ackTimeout = false;
-////    resendAck();
-//  }
   else {
     sendframe();
     sendEnd();

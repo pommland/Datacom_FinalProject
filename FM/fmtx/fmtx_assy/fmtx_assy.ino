@@ -2,15 +2,15 @@
 #include <Adafruit_MCP4725.h>
 #include <Adafruit_ADS1015.h>
 Adafruit_MCP4725 dac;
-#define defaultFreq 1700 // dac speed (Hz)
+#define defaultFreq 6039 // dac speed (Hz)
 #define f0 500  // FSK f0
 #define f1 750  // FSK f1
 #define f2 1000 // FSK f2
-#define f3 1250 // FSK f3
+#define f3 1500 // FSK f3
 float delay0, delay1, delay2, delay3;
 //int   Cycles[4] = { 1 , 3 , 5 , 7};
 //int   Cycles[4] = { 2 , 3 , 4 , 5};
-int Cycles[2] = { 2, 5 };
+int Cycles[2] = { 1, 3 };
 
 const int size = 4 ;
 
@@ -20,15 +20,15 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   dac.begin(0x62);
+
   //  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
-  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
   //  delay1 = (1000000 / f1 - 1000000 / defaultFreq) / size ;
   //  delay2 = (1000000 / f2 - 1000000 / defaultFreq) / size ;
-  delay3 = (1000000 / f3 - 1000000 / defaultFreq) / size ;
-  //  delay0 = 2300;
+  //  delay3 = (1000000 / f3 - 1000000 / defaultFreq) / size ;
+  delay0 = 5325; // microSecs at 1200Hz
   //  delay1 = 667;
   //  delay2 = 337;
-  //  delay3 = 196 ;
+  delay3 = 1667 ;//
 
   Serial.println( String(delay0) + " " + String(delay1) + " " + String(delay2) + " " + String(delay3));
   getS_DAC();
@@ -92,15 +92,16 @@ void Send_FM_Data(String value) {
         else if (input[k] == 1) { // ‘1’
           d = delay3;
         }
-        Serial.println(input[k]);
-//        for (int r = 0 ; r  <  5 ; ++r) // send with fixed baudrate
-          for (int cl = 0; cl < Cycles[input[k]]; ++cl) {  // send with fixed cycles
-            for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
-              dac.setVoltage(S_DAC[s], false);
-              delayMicroseconds(d);
-            }
+        Serial.print(input[k]);
+        //        for (int r = 0 ; r  <  5 ; ++r) // send with fixed baudrate
+        for (int cl = 0; cl < Cycles[input[k]] * 2; ++cl) {  // send with fixed cycles
+          for (int s = 0 ; s < size ; ++s) { // send with fixed sampling
+            dac.setVoltage(S_DAC[s], false);
+            delayMicroseconds(d);
           }
+        }
       }
+      Serial.println();
     }
   }
 

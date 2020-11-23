@@ -10,9 +10,9 @@ TEA5767 Radio;
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 50;
+unsigned long  r_slope = 45;
 unsigned long  initial_signal = 25;
-unsigned long  elapse_time = 48000;
+unsigned long  elapse_time = 43550;
 
 void setup() {
   // put your setup code here, to run once:
@@ -22,7 +22,7 @@ void setup() {
   Serial.begin(115200);
   Serial.flush();
   Radio.init();
-  Radio.set_frequency(90);
+  Radio.set_frequency(87);
   pinMode(A1, INPUT);
   delay(500);
 
@@ -32,7 +32,7 @@ void setup() {
 bool check = false;
 auto timer = millis();
 int  count = 0;
-int  countBit = 0; 
+int  countBit = 0;
 int  prev = 0;
 String res = "", all = "";
 int max = 0;
@@ -42,25 +42,25 @@ auto lastCount = millis();
 void checkBit() { // Check 8 bits
   if (check) {
     lastCount = millis();
-    if (count >= 30) { // if count is more than 30 cycles
-      res += "11";
+    if (count > 4) { // if count is more than 30 cycles
+      res += "1";
     }
-    else if (count >= 22) { // if count is more than 22 cycles
-      res += "10";
+    else { // if count is more than 22 cycles
+      res += "0";
     }
-    else if (count >= 10) { // if count is more than 10 cycles
-      res += "01" ;
-    }
-    else {
-      res += "00";
-    }
+    //    else if (count >= 10) { // if count is more than 10 cycles
+    //      res += "01" ;
+    //    }
+    //    else {
+    //      res += "00";
+    //    }
 
     if (check) {
       countBit ++;
       check = false;
-      //      Serial.println(count);
-      //      Serial.println(res);
-      if (countBit == 4) {
+      Serial.println(count);
+      Serial.println(res);
+      if (countBit == 8) {
         countBit = 0;
         Serial.println("------------------------\nResult =");
         int sum = 0;
@@ -99,13 +99,13 @@ void drop(int milli) { // if no data send for n millisec reset data
 }
 
 
-void split(String s[],int num, char value[], char sep[] = " " ) {
+void split(String s[], int num, char value[], char sep[] = " " ) {
   char *token = strtok(value, sep);
   //  char *buf[10];
   int co =  0;
   while (token != NULL)
   {
-    if (co >= num ) break; 
+    if (co >= num ) break;
     s[co] = token;
     Serial.println(token);
     token = strtok(NULL, sep);
@@ -114,7 +114,7 @@ void split(String s[],int num, char value[], char sep[] = " " ) {
   //  Settings(buf[0], buf[1]);
 }
 
- 
+
 
 void Settings(String mode , String value ) {
 
@@ -156,14 +156,14 @@ void configs() {
       String inp[3];
       split(inp, 3, s);
       Settings(inp[0], inp[1]);
-      
+
     }
   }
 }
 
 bool initial() {
   int tmp = analogRead(A1) ;
-  Serial.println(tmp);
+//  Serial.println(tmp);
   if (check == false && tmp >= initial_signal) { // signal at 25
     timer = micros();
     count = 0;
@@ -192,7 +192,7 @@ void FM() {
   if (initial()) {
     receiveData();
   }
-//  checkBit();
+  checkBit();
 }
 
 void loop() {

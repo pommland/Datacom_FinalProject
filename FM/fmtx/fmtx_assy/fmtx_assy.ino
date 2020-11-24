@@ -21,10 +21,6 @@ void setup() {
   Serial.begin(115200);
   dac.begin(0x62);
 
-  //  delay0 = (1000000 / f0 - 1000000 / defaultFreq) / size ;
-  //  delay1 = (1000000 / f1 - 1000000 / defaultFreq) / size ;
-  //  delay2 = (1000000 / f2 - 1000000 / defaultFreq) / size ;
-  //  delay3 = (1000000 / f3 - 1000000 / defaultFreq) / size ;
   delay0 = 5325; // microSecs at 1200Hz
   //  delay1 = 667;
   //  delay2 = 337;

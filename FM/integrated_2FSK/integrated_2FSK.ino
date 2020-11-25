@@ -12,8 +12,8 @@ uint16_t S_DAC[size];
 ///////////////////////////////////
 
 // RX Variables ///////////////////
-#include <TEA5767.h>
-TEA5767 Radio;
+//#include <TEA5767.h>
+//TEA5767 Radio;
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -22,9 +22,9 @@ TEA5767 Radio;
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 30;
-unsigned long  initial_signal = 10;
-unsigned long  elapse_time = 43550;
+unsigned long  r_slope = 150;
+unsigned long  initial_signal = 50;
+unsigned long  elapse_time = 44000;
 unsigned long  mode = 0;
 
 bool check = false;
@@ -161,12 +161,13 @@ void receive() {
 
       if (getSum(forSum) == sum) {
         Serial.println("Frame is Correct");
-        allData += data;
+        //        allData += data;
         Serial.println("[Sending Ack]");
         auto fn = String(frame[1]).toInt();
 
         if (ackNo == fn) { // if ack loss
           ackNo = !ackNo;
+          allData += data;
         } else  Serial.println("Frame Already Receive Reject!");
         String ack = "A" + String(ackNo);
         ack = "A" + String(ackNo) + getSum(ack) + "#";
@@ -184,12 +185,17 @@ void receive() {
       String sum = String(frame[2]);
       if (getSum(forSum) == sum) {
         Serial.println("Frame is Correct");
-        canSend = true;
-        frameNo = !frameNo;
+        long aN = String(frame[1]).toInt();
+        if (aN == !frameNo) { // send Next Frame
+          canSend = true;
+          frameNo = !frameNo;
+        } else { // resend
+          sendFrame(dataFrameSend);
+        }
       } else {
         Serial.println("Frame is Corrupted \nDiscarded");
       }
-      // send next frame
+
     }
   }
 }
@@ -315,10 +321,10 @@ void initRx() {
   sbi(ADCSRA, ADPS2) ; // this for increase analogRead Speed
   cbi(ADCSRA, ADPS1) ;
   cbi(ADCSRA, ADPS0) ;
-  Radio.init();
-  Radio.set_frequency(radio_freq);
+  //  Radio.init();
+  //  Radio.set_frequency(radio_freq);
   pinMode(A1, INPUT);
-  delay(500);
+  //  delay(500);
   Serial.println("Ready...");
 }
 
@@ -429,7 +435,8 @@ bool initial() {
 
 void receiveData() {
   while (check && (micros() - timerFM) <=  elapse_time ) { // if signal receive begin loop for counting data
-    int tmp = analogRead(A1)  ;
+    int tmp = analogRead(A1);
+
     if (!mode) {
       if (max < tmp) max = tmp;
       if (tmp < 20 && max - tmp >  r_slope) {  // if peak down to base  it is 1 cycles

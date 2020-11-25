@@ -190,7 +190,10 @@ void receive() {
           canSend = true;
           frameNo = !frameNo;
         } else { // resend
-          sendFrame(dataFrameSend);
+          if (bufferToSend.length() != 0)
+            sendFrame(dataFrameSend);
+          else
+            Serial.println("Out of Data");
         }
       } else {
         Serial.println("Frame is Corrupted \nDiscarded");

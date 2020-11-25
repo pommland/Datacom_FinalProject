@@ -220,10 +220,10 @@ void drop(int milli) { // if no data send for n millisec reset data
 }
 
 
-void Settings(String mode , String value ) {
+void Settings(String moe , String value ) {
 
   unsigned long  val  =  value.toInt();
-  int m  =  mode.toInt();
+  int m  =  moe.toInt();
 
   switch (m) {
     case 0 :
@@ -265,7 +265,7 @@ bool initial() {
       check = true;
     }
   }
-  else if (check == false && analogRead(A1) <= initial_signal) { // signal at 25
+  else if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
     timer = micros();
     count = 0;
     prev  = 0;
@@ -286,7 +286,7 @@ void receiveData() {
       }
     } else {
       if (max > tmp) max = tmp;
-      if (tmp > 30 && tmp - max > r_slope) {
+      if ( tmp - max > r_slope) {
         count ++;
         max = 5000;
       }

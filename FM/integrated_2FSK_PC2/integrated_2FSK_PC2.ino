@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_MCP4725.h>
 #include <Adafruit_ADS1015.h>
-#define radio_freq 90
+#define radio_freq 105
 #define dac_Address 0x61
 Adafruit_MCP4725 dac;
 float delay0, delay1, delay2, delay3;
@@ -220,10 +220,10 @@ void drop(int milli) { // if no data send for n millisec reset data
 }
 
 
-void Settings(String mode , String value ) {
+void Settings(String moe , String value ) {
 
   unsigned long  val  =  value.toInt();
-  int m  =  mode.toInt();
+  int m  =  moe.toInt();
 
   switch (m) {
     case 0 :
@@ -256,7 +256,7 @@ void Settings(String mode , String value ) {
 
 bool initial() {
   int tmp =  analogRead(A1) ;
-  if (!mode) {
+  if (mode == 0) {
     if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
       timer = micros();
       count = 0;
@@ -265,7 +265,7 @@ bool initial() {
       check = true;
     }
   }
-  else if (check == false && analogRead(A1) <= initial_signal) { // signal at 25
+  else if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
     timer = micros();
     count = 0;
     prev  = 0;
@@ -278,15 +278,17 @@ bool initial() {
 void receiveData() {
   while (check && (micros() - timer) <=  elapse_time ) { // if signal receive begin loop for counting data
     int tmp = analogRead(A1)  ;
-    if (!mode) {
+    if (mode == 0) {
+
       if (max < tmp) max = tmp;
       if (tmp < 20 && max - tmp >  r_slope) {  // if peak down to base  it is 1 cycles
         count ++;
         max = 0;
       }
     } else {
+
       if (max > tmp) max = tmp;
-      if (tmp > 30 && tmp - max > r_slope) {
+      if (tmp - max > r_slope) {
         count ++;
         max = 5000;
       }
@@ -296,7 +298,7 @@ void receiveData() {
 
 String Rx() {
   drop(100); // drops in 100ms
-  //  Serial.println(analogRead(A1));
+  //    Serial.println(analogRead(A1));
   if (initial()) {
     receiveData();
   }

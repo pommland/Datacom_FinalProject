@@ -5,7 +5,7 @@ def process(img):
     filename = img
     img = cv2.imread(filename)
     img = cv2.rotate(img, cv2.cv2.ROTATE_90_CLOCKWISE) 
-    img = img[40:140,20:100]
+    img = img[20:100,40:100]
     img = cv2.resize(img, (64, 64))
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
@@ -34,6 +34,7 @@ def process(img):
     }
 
 
+
     min_key = '0000'
     minn = 99999
 
@@ -43,3 +44,5 @@ def process(img):
             minn = np.sum(np.logical_xor(thresh,templates[key]))
 
     return min_key
+
+# print(process('l.bmp'))

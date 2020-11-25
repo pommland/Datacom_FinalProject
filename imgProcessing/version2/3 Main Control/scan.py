@@ -30,12 +30,12 @@ def scanFor(COM_PORT, dest):
     sr = PROCESS.process('r.bmp')
     ser.write(b'M')
     ser.read_until('M'.encode())
-    ser.close()
     if sr == dest:
         ser.write(b'M')
         ser.read_until('M'.encode())
         ser.close()
         return extract_data('r.bmp')
+    ser.close()
     return 'No pic!'
 
 def init(COM_PORT):
@@ -57,6 +57,7 @@ def init(COM_PORT):
     ser.read_until('M'.encode())
     ser.close()
 
+
     # data = {
     #     'L': extract_data('l.bmp'),
     #     'M': extract_data('m.bmp'),
@@ -65,3 +66,4 @@ def init(COM_PORT):
 
     return { 'L': sl, 'M': sm, 'R': sr } # , 'data': data }
 
+# print(init('COM3'))

@@ -28,7 +28,7 @@ unsigned long  elapse_time = 43550;
 unsigned long  mode = 0;
 
 bool check = false;
-auto timer = millis();
+auto timerFM = millis();
 int  count = 0;
 int  countBit = 0;
 int  prev = 0;
@@ -36,6 +36,21 @@ String res = "", all = "";
 int max = 0;
 auto lastCount = millis();
 ///////////////////////////////////
+
+//// Flow Control /////
+bool canSend = true;
+long timer = 0;
+int dataSize = 5;
+
+int frameNo = 0;
+int ackNo = 0;
+
+char flag = ':';
+String bufferToSend = "";
+String dataFrameSend = "";
+
+String allData = "";
+//////////////////////
 
 
 void setup() {
@@ -50,13 +65,147 @@ void setup() {
 
 
 void loop() {
+  timeOut();
   handleSerial();
-  String res = Rx();
-  if ( res != "") {
-    Serial.println("Data Received : " + res);
-  }
+  readySend();
+  receive();
+  isSendEnd();
   //  dac.setVoltage(0, false); // default
 }
+
+//////////////////////// Flow Control /////////////////////////////////////
+
+void timeOut() {
+  if (!canSend && millis() - timer >= 5000) {
+    Serial.println("Status : TimeOut");
+    Serial.println("Resend!");
+    //Send dataFrame
+    sendFrame(dataFrameSend);
+  }
+}
+
+void readySend() {
+  if (canSend && bufferToSend.length() != 0) {
+    bool isAckFrame = false;
+    //Slicing Data from Buffer
+    String data = "";
+    if (bufferToSend.length() < dataSize) {
+      int num = bufferToSend.length();
+      for (int i = 0; i < num; i++) {
+        data += bufferToSend[0];
+        bufferToSend.remove(0, 1);
+      }
+    }
+    else {
+      for (int i = 0; i < dataSize; i++) {
+        data += bufferToSend[0];
+        bufferToSend.remove(0, 1);
+      }
+    }
+
+    String forSum = "I" + String(frameNo) + data  ;
+    dataFrameSend = "I" + String(frameNo) + data + ";" + getSum(forSum) + "#" ;
+    //Send dataFrame
+    sendFrame(dataFrameSend);
+    canSend = false;
+  }
+}
+
+void sendFrame(String frame) {
+  Serial.println("Send frame : " + frame);
+  Serial.println("Frame No : " + String(frameNo));
+  Serial.println("============================");
+  Tx(frame);
+  canSend = false;
+  timer = millis();
+}
+
+void sendAck(String frame) {
+  Serial.print("Send Ack : ");
+  Serial.println(ackNo);
+  Serial.println("============================");
+  Tx(frame);
+}
+void isSendEnd() {
+  if (allData[ allData.length() - 1] == ':') {
+    Serial.println("Send End With Data : " + allData);
+    allData = "";
+  }
+}
+
+void receive() {
+  String res = Rx();
+  if (res != "" && res[res.length() - 1] == '#') {
+    String frame = res;
+
+    // I-Frame
+    if (frame[0] != 'A') { // is I-Frame
+      String data = "", sum = "";
+
+      int i = 2;
+      for (i = 2 ; i < 7 && frame[i] != ';' ; ++i) {
+        data += String(frame[i]);
+      }
+
+      //      for (int j = 1 ; j <= 2  && frame[i + j] != '#'; j++) {
+      //        sum += String(frame[i + j]);
+      //      }
+      sum = String(frame[frame.length() - 2]);
+
+      Serial.println("Received I-Frame");
+      Serial.println("frame No. : " + String(frame[1]) );
+      Serial.println("Data      : " + (data) );
+      Serial.println("Sum       : " + (sum) );
+
+      String forSum = "I" + String(frame[1]) + data ;
+
+      if (getSum(forSum) == sum) {
+        Serial.println("Frame is Correct");
+        allData += data;
+        Serial.println("[Sending Ack]");
+        auto fn = String(frame[1]).toInt();
+
+        if (ackNo == fn) { // if ack loss
+          ackNo = !ackNo;
+        } else  Serial.println("Frame Already Receive Reject!");
+        String ack = "A" + String(ackNo);
+        ack = "A" + String(ackNo) + getSum(ack) + "#";
+        sendAck(ack);
+        // send ack
+      } else {
+        Serial.println(getSum(forSum) + ":" + sum);
+        Serial.println("Frame is Corrupted \nDiscarded");
+        // discarding
+      }
+
+    } else {
+      Serial.println("Received ACK-Frame");
+      String forSum = "A" + String(frame[1]);
+      String sum = String(frame[2]);
+      if (getSum(forSum) == sum) {
+        Serial.println("Frame is Correct");
+        canSend = true;
+        frameNo = !frameNo;
+      } else {
+        Serial.println("Frame is Corrupted \nDiscarded");
+      }
+      // send next frame
+    }
+  }
+}
+
+
+String getSum(String string) {
+  int sum = 0;
+  for (int i = 0; i < string.length(); i++) {
+    sum += string[i];
+  }
+  //  uint8_t a = sum & 0xFF , b = (sum >> 8) & 0xFF ;
+
+  return String(sum % 10);
+}
+/////////////////////////////////////////////////////////////////////
+
 
 void split(String s[], int num, char value[], char sep[] = " " ) {
   char *token = strtok(value, sep);
@@ -86,8 +235,10 @@ void handleSerial() {
     split(inp, 4, s);
 
     if (inp[0] == "Send") {
-      // Send data
-      Tx(inp[1]);
+      bufferToSend = "";
+      for (int i = 0 ; i < inp[1].length(); ++i) {
+        bufferToSend += String(inp[1][i]);
+      }
     } else if (inp[0] == "Config") {
       // Config mode data
       Settings(inp[1], inp[2]);
@@ -98,7 +249,7 @@ void handleSerial() {
 /////////////////// TX ////////////////////////////////////////////////////////////////////////////
 void Tx(String s) {
   if (s != "") {
-    s = "~" + s + "~";  // data will be send  example  enter "xxx~" data will be "~xxx~"
+    // data will be send  example  enter "xxx~" data will be "~xxx~"
     Serial.println(s);
     Send_FM_Data(s);
     Serial.flush();
@@ -194,7 +345,8 @@ void checkBit() { // Check 8 bits
           t <<= 1;
         }
         //        Serial.println((char)sum);
-        all += (char)sum;
+        if ((char)sum != ' ')
+          all += (char)sum;
         Serial.println(all);
         Serial.println("------------------------");
         res = "";
@@ -258,7 +410,7 @@ bool initial() {
   int tmp =  analogRead(A1) ;
   if (!mode) {
     if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
-      timer = micros();
+      timerFM = micros();
       count = 0;
       prev  = 0;
       max   = 0;
@@ -266,7 +418,7 @@ bool initial() {
     }
   }
   else if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
-    timer = micros();
+    timerFM = micros();
     count = 0;
     prev  = 0;
     max   = 5000;
@@ -276,7 +428,7 @@ bool initial() {
 }
 
 void receiveData() {
-  while (check && (micros() - timer) <=  elapse_time ) { // if signal receive begin loop for counting data
+  while (check && (micros() - timerFM) <=  elapse_time ) { // if signal receive begin loop for counting data
     int tmp = analogRead(A1)  ;
     if (!mode) {
       if (max < tmp) max = tmp;
@@ -301,7 +453,7 @@ String Rx() {
     receiveData();
   }
   checkBit();
-  if (all[0] == "~" and all[ all.length() - 1 ] == "~") {
+  if (all.length() != 0 && all[all.length() - 1] == '#') {
     return all;
   } else {
     return "";

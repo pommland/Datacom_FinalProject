@@ -73,6 +73,19 @@ void loop() {
   //  dac.setVoltage(0, false); // default
 }
 
+void split(String s[], int num, char value[], char sep[] = " " ) {
+  char *token = strtok(value, sep);
+  int co =  0;
+  while (token != NULL)
+  {
+    if (co >= num ) break;
+    s[co] = token;
+    Serial.println(token);
+    token = strtok(NULL, sep);
+    co++;
+  }
+}
+
 //////////////////////// Flow Control /////////////////////////////////////
 
 void timeOut() {
@@ -200,6 +213,7 @@ void receive() {
       }
 
     }
+    Serial.println("Alldata : " + allData);
   }
 }
 
@@ -216,18 +230,6 @@ String getSum(String string) {
 /////////////////////////////////////////////////////////////////////
 
 
-void split(String s[], int num, char value[], char sep[] = " " ) {
-  char *token = strtok(value, sep);
-  int co =  0;
-  while (token != NULL)
-  {
-    if (co >= num ) break;
-    s[co] = token;
-    Serial.println(token);
-    token = strtok(NULL, sep);
-    co++;
-  }
-}
 
 void handleSerial() {
   if (Serial.available() > 0) {
@@ -354,9 +356,10 @@ void checkBit() { // Check 8 bits
           t <<= 1;
         }
         //        Serial.println((char)sum);
-        if ((char)sum != ' ')
-          all += (char)sum;
+
+        all += (char)sum;
         Serial.println(all);
+        //        Serial.println("All Data : " + allData);
         Serial.println("------------------------");
         res = "";
       }

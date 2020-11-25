@@ -142,6 +142,7 @@ void sendAck(String frame) {
 void isSendEnd() {
   if (allData[ allData.length() - 1] == ':') {
     Serial.println("Send End With Data : " + allData);
+    ackNo = 0;
     allData = "";
   }
 }
@@ -205,8 +206,10 @@ void receive() {
         } else { // resend
           if (bufferToSend.length() != 0)
             sendFrame(dataFrameSend);
-          else
+          else {
             Serial.println("Out of Data");
+            frame = 0;
+          }
         }
       } else {
         Serial.println("Frame is Corrupted \nDiscarded");

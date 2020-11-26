@@ -22,9 +22,9 @@ uint16_t S_DAC[size];
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 150;   
+unsigned long  r_slope = 150;
 unsigned long  initial_signal = 50;
-unsigned long  elapse_time = 44000;
+unsigned long  elapse_time = 43900;
 unsigned long  mode = 0;
 
 bool check = false;
@@ -122,6 +122,10 @@ void readySend() {
     sendFrame(dataFrameSend);
     canSend = false;
   }
+  if (bufferToSend.length() == 0) {
+    frameNo = 0;
+    canSend = true;
+  }
 }
 
 void sendFrame(String frame) {
@@ -140,7 +144,7 @@ void sendAck(String frame) {
   Tx(frame);
 }
 void isSendEnd() {
-  if (allData[ allData.length() - 1] == ':') {
+  if (allData.length() != 0 and allData[ allData.length() - 1] == ':') {
     Serial.println("Send End With Data : " + allData);
     ackNo = 0;
     allData = "";
@@ -464,7 +468,7 @@ void receiveData() {
 
 String Rx() {
   drop(100); // drops in 100ms
-  //  Serial.println(analogRead(A1));
+
   if (initial()) {
     receiveData();
   }

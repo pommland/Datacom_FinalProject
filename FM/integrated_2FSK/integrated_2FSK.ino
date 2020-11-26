@@ -5,7 +5,7 @@
 #define radio_freq 87.5
 #define dac_Address 0x62
 Adafruit_MCP4725 dac;
-float delay0, delay1, delay2, delay3;
+float delay0, delay3;
 int   Cycles[2] = { 1 , 3 };
 const int size = 4 ;
 uint16_t S_DAC[size];
@@ -22,7 +22,7 @@ uint16_t S_DAC[size];
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 150;
+unsigned long  r_slope = 150;   
 unsigned long  initial_signal = 50;
 unsigned long  elapse_time = 44000;
 unsigned long  mode = 0;
@@ -89,7 +89,7 @@ void split(String s[], int num, char value[], char sep[] = " " ) {
 //////////////////////// Flow Control /////////////////////////////////////
 
 void timeOut() {
-  if (!canSend && millis() - timer >= 5000) {
+  if (!canSend && millis() - timer >= 10000) {
     Serial.println("Status : TimeOut");
     Serial.println("Resend!");
     //Send dataFrame
@@ -208,7 +208,7 @@ void receive() {
             sendFrame(dataFrameSend);
           else {
             Serial.println("Out of Data");
-            frame = 0;
+            frameNo = 0;
           }
         }
       } else {
@@ -292,7 +292,7 @@ void Send_FM_Data(String value) {
   for (int valueIndex = 0 ; valueIndex < value.length() ; ++valueIndex) {
     if (value[valueIndex] != '\n' || value[valueIndex] != '~') {
       char in  = value[valueIndex];
-      int input[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+      int input[9] = { 0, 0, 0, 0, 0, 0, 0, 0 , 0 };
       int i = 0;
 
       while (in > 0) {   //  แปลงเป็น 2 บิต

@@ -5,15 +5,15 @@
 #define radio_freq 87.5
 #define dac_Address 0x61
 Adafruit_MCP4725 dac;
-float delay0, delay1, delay2, delay3;
-int   Cycles[2] = { 1 , 3 };
-const int size = 4 ;
-uint16_t S_DAC[size];
+float delay0,delay3; // delay0 for bit '0' , delay3 for bit '1'
+int   Cycles[2] = { 1 , 3 }; // cycle/baud 
+const int size = 4 ; // sampling size
+uint16_t S_DAC[size]; // pwmDuty
 ///////////////////////////////////
 
 // RX Variables ///////////////////
-//#include <TEA5767.h>
-//TEA5767 Radio;
+#include <TEA5767.h>  // FM rx library
+TEA5767 Radio;
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -22,24 +22,28 @@ uint16_t S_DAC[size];
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 /*amplitude diff. for detecting rising or falling signal*/
-unsigned long  r_slope = 150;
-unsigned long  initial_signal = 50;
-unsigned long  elapse_time = 44000;
-unsigned long  mode = 0;
+//unsigned long  r_slope = 150;
+//unsigned long  initial_signal = 50;
+//unsigned long  elapse_time = 44000;
+//unsigned long  mode = 0;
+unsigned long  r_slope = 30;                 // Vpeak
+unsigned long  initial_signal = 10;          // Vstart
+unsigned long  elapse_time = 43500;          // 1 baud width
+unsigned long  mode = 0;                     // calculation mode
 
-bool check = false;
-auto timerFM = millis();
-int  count = 0;
-int  countBit = 0;
-int  prev = 0;
-String res = "", all = "";
-int max = 0;
-auto lastCount = millis();
+
+bool check = false;        // isOnCounting
+auto timerFM = millis();   // timer for FM Counting
+int  count = 0;            // Cycles Count
+int  countBit = 0;         // Bit count
+String res = "", all = ""; // res 8bit char , all store data in 1 frame 
+int max = 0;               // store peak amplitude
+auto lastCount = millis(); // lastest time as occur
 ///////////////////////////////////
 
 //// Flow Control /////
-bool canSend = true;
-long timer = 0;
+bool canSend = true;       // can send data
+long timer = 0;            // time out
 int dataSize = 5;
 
 int frameNo = 0;
@@ -89,7 +93,7 @@ void split(String s[], int num, char value[], char sep[] = " " ) {
 //////////////////////// Flow Control /////////////////////////////////////
 
 void timeOut() {
-  if (!canSend && millis() - timer >= 5000) {
+  if (!canSend && millis() - timer >= 10000) {
     Serial.println("Status : TimeOut");
     Serial.println("Resend!");
     //Send dataFrame
@@ -208,7 +212,7 @@ void receive() {
             sendFrame(dataFrameSend);
           else {
             Serial.println("Out of Data");
-            frame = 0;
+            frameNo = 0;
           }
         }
       } else {
@@ -329,8 +333,8 @@ void initRx() {
   sbi(ADCSRA, ADPS2) ; // this for increase analogRead Speed
   cbi(ADCSRA, ADPS1) ;
   cbi(ADCSRA, ADPS0) ;
-  //  Radio.init();
-  //  Radio.set_frequency(radio_freq);
+  Radio.init();
+  Radio.set_frequency(radio_freq);
   pinMode(A1, INPUT);
   //  delay(500);
   Serial.println("Ready...");

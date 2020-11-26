@@ -92,7 +92,7 @@ void split(String s[], int num, char value[], char sep[] = " " ) {
 
 //////////////////////// Flow Control /////////////////////////////////////
 
-void timeOut() {
+void timeOut() {  // check is Timeout and then Resend data
   if (!canSend && millis() - timer >= 10000) {
     Serial.println("Status : TimeOut");
     Serial.println("Resend!");
@@ -101,26 +101,27 @@ void timeOut() {
   }
 }
 
-void readySend() {
+void readySend() { // make frame and send data if can send
   if (canSend && bufferToSend.length() != 0) {
     bool isAckFrame = false;
     //Slicing Data from Buffer
     String data = "";
-    if (bufferToSend.length() < dataSize) {
+    if (bufferToSend.length() < dataSize) {  // if data is less than 5 bytes
       int num = bufferToSend.length();
-      for (int i = 0; i < num; i++) {
-        data += bufferToSend[0];
-        bufferToSend.remove(0, 1);
+      for (int i = 0; i < num; i++) { 
+        data += bufferToSend[0];  
+        bufferToSend.remove(0, 1); 
       }
     }
     else {
-      for (int i = 0; i < dataSize; i++) {
+      for (int i = 0; i < dataSize; i++) { // if data is more than 5 bytes
         data += bufferToSend[0];
         bufferToSend.remove(0, 1);
       }
     }
-
-    String forSum = "I" + String(frameNo) + data  ;
+    // tmp package  =  [I][frameNo][data]
+    String forSum = "I" + String(frameNo) + data  ; // for Checksum
+    // real package =  [I][frameNo][data][;][sum][#]
     dataFrameSend = "I" + String(frameNo) + data + ";" + getSum(forSum) + "#" ;
     //Send dataFrame
     sendFrame(dataFrameSend);
@@ -132,7 +133,7 @@ void sendFrame(String frame) {
   Serial.println("Send frame : " + frame);
   Serial.println("Frame No : " + String(frameNo));
   Serial.println("============================");
-  Tx(frame);
+  Tx(frame); // let Tx send frame
   canSend = false;
   timer = millis();
 }
@@ -144,7 +145,7 @@ void sendAck(String frame) {
   Tx(frame);
 }
 void isSendEnd() {
-  if (allData[ allData.length() - 1] == ':') {
+  if (allData[ allData.length() - 1] == ':') {  // if data end with ':' 
     Serial.println("Send End With Data : " + allData);
     ackNo = 0;
     allData = "";
@@ -153,7 +154,7 @@ void isSendEnd() {
 
 void receive() {
   String res = Rx();
-  if (res != "" && res[res.length() - 1] == '#') {
+  if (res != "" && res[res.length() - 1] == '#') { // if data is detect and not the end flag
     String frame = res;
 
     // I-Frame

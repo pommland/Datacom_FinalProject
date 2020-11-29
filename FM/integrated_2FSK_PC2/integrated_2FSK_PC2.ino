@@ -5,8 +5,8 @@
 #define radio_freq 87.5
 #define dac_Address 0x61
 Adafruit_MCP4725 dac;
-float delay0,delay3; // delay0 for bit '0' , delay3 for bit '1'
-int   Cycles[2] = { 1 , 3 }; // cycle/baud 
+float delay0, delay3; // delay0 for bit '0' , delay3 for bit '1'
+int   Cycles[2] = { 1 , 3 }; // cycle/baud
 const int size = 4 ; // sampling size
 uint16_t S_DAC[size]; // pwmDuty
 ///////////////////////////////////
@@ -28,7 +28,7 @@ TEA5767 Radio;
 //unsigned long  mode = 0;
 unsigned long  r_slope = 30;                 // Vpeak
 unsigned long  initial_signal = 10;          // Vstart
-unsigned long  elapse_time = 43500;          // 1 baud width
+unsigned long  elapse_time = 44000;          // 1 baud width
 unsigned long  mode = 0;                     // calculation mode
 
 
@@ -36,7 +36,7 @@ bool check = false;        // isOnCounting
 auto timerFM = millis();   // timer for FM Counting
 int  count = 0;            // Cycles Count
 int  countBit = 0;         // Bit count
-String res = "", all = ""; // res 8bit char , all store data in 1 frame 
+String res = "", all = ""; // res 8bit char , all store data in 1 frame
 int max = 0;               // store peak amplitude
 auto lastCount = millis(); // lastest time as occur
 ///////////////////////////////////
@@ -49,7 +49,6 @@ int dataSize = 5;
 int frameNo = 0;
 int ackNo = 0;
 
-char flag = ':';
 String bufferToSend = "";
 String dataFrameSend = "";
 
@@ -108,9 +107,9 @@ void readySend() { // make frame and send data if can send
     String data = "";
     if (bufferToSend.length() < dataSize) {  // if data is less than 5 bytes
       int num = bufferToSend.length();
-      for (int i = 0; i < num; i++) { 
-        data += bufferToSend[0];  
-        bufferToSend.remove(0, 1); 
+      for (int i = 0; i < num; i++) {
+        data += bufferToSend[0];
+        bufferToSend.remove(0, 1);
       }
     }
     else {
@@ -145,7 +144,7 @@ void sendAck(String frame) {
   Tx(frame);
 }
 void isSendEnd() {
-  if (allData[ allData.length() - 1] == ':') {  // if data end with ':' 
+  if (allData[ allData.length() - 1] == ':') {  // if data end with ':'
     Serial.println("Send End With Data : " + allData);
     ackNo = 0;
     allData = "";
@@ -432,7 +431,6 @@ bool initial() {
     if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
       timerFM = micros();
       count = 0;
-      prev  = 0;
       max   = 0;
       check = true;
     }
@@ -440,7 +438,6 @@ bool initial() {
   else if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
     timerFM = micros();
     count = 0;
-    prev  = 0;
     max   = 5000;
     check = true;
   }

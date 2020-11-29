@@ -183,7 +183,7 @@ void receive() {
         Serial.println("[Sending Ack]");
         auto fn = String(frame[1]).toInt();
 
-        if (ackNo == fn) { // if ack loss
+        if (ackNo == fn) { // if ack correct
           ackNo = !ackNo;
           allData += data;
         } else  Serial.println("Frame Already Receive Reject!");
@@ -279,6 +279,7 @@ void Tx(String s) {
 
 void initTx() {
   dac.begin(dac_Address); // 0x62
+  // delay formula = 1sec/(baudrate * cycles * sampling);
   delay0 = 5325;
   delay3 = 1667;
   getS_DAC();
@@ -299,7 +300,7 @@ void Send_FM_Data(String value) {
       int input[9] = { 0, 0, 0, 0, 0, 0, 0, 0 , 0 };
       int i = 0;
 
-      while (in > 0) {   //  แปลงเป็น 2 บิต
+      while (in > 0) {   //  แปลงเป็น 1  บิต
         input[i] = in & 1 ;
         in >>= 1;
         i++;
@@ -431,7 +432,6 @@ bool initial() {
     if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
       timerFM = micros();
       count = 0;
-      prev  = 0;
       max   = 0;
       check = true;
     }
@@ -439,7 +439,6 @@ bool initial() {
   else if (check == false && analogRead(A1) >= initial_signal) { // signal at 25
     timerFM = micros();
     count = 0;
-    prev  = 0;
     max   = 5000;
     check = true;
   }
@@ -451,7 +450,7 @@ void receiveData() {
     int tmp = analogRead(A1);
 
     if (!mode) {
-      if (max < tmp) max = tmp;
+      if (max < tmp) max = tmp; // find peak
       if (tmp < 20 && max - tmp >  r_slope) {  // if peak down to base  it is 1 cycles
         count ++;
         max = 0;
